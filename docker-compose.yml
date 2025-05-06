@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+    postgres:
+        image: postgres:15
+        container_name: fincheck_postgres
+        restart: always
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: fincheck
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+    backend:
+        build: ./backend
+        container_name: fincheck_backend
+        restart: unless-stopped
+        depends_on:
+            - postgres
+        ports:
+            - "3001:3000"
+        environment:
+            DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/fincheck"
+        volumes:
+            - ./backend:/app
+
+    frontend:
+        build: ./frontend
+        container_name: fincheck_frontend
+        restart: unless-stopped
+        depends_on:
+            - backend
+        ports:
+            - "3000:3000"
+        volumes:
+            - ./frontend:/app
+
+volumes:
+    postgres_data:
