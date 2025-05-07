@@ -1,17 +1,17 @@
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { CategoryModule } from './category/category.module';
+import { CategoryModule } from './categories/categories.module';
 import { ConfigModule } from '@nestjs/config';
 import { Module } from '@nestjs/common';
-import { TagModule } from './tag/tag.module';
-import { TransactionModule } from './transaction/transaction.module';
-import { UserModule } from './user/user.module';
+import { TagModule } from './tags/tags.module';
+import { TransactionModule } from './transactions/transactions.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     AuthModule,
-    UserModule,
+    UsersModule,
     TransactionModule,
     CategoryModule,
     TagModule,

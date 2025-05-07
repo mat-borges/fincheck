@@ -1,43 +1,74 @@
 import * as bcrypt from 'bcrypt';
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 
-import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { AuthRegisterDto } from '../DTOs/auth-register.dto';
+import { CreateUserDto } from 'src/DTOs/create-user.dto';
 import { JwtService } from '@nestjs/jwt';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  private EXPIRATION_TIME = '7 days';
+  private ISSUER = 'FinCheck';
+  private AUDIENCE = 'users';
 
-  async validateUser(email: string, password: string): Promise<AuthenticatedUser> {
-    // Substituir por acesso ao banco de dados
-    const user = {
-      id: '1',
-      email,
-      passwordHash: await bcrypt.hash('123456', 10),
-    };
+  constructor(
+    private readonly jwtService: JwtService,
+    private prisma: PrismaService,
+    private usersService: UsersService,
+  ) {}
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) throw new UnauthorizedException('Credenciais inválidas');
+  async createToken(user: CreateUserDto) {
+    const token = this.jwtService.sign(
+      {
+        name: user.name,
+        email: user.email,
+      },
+      {
+        expiresIn: this.EXPIRATION_TIME,
+        subject: user.id,
+        issuer: this.ISSUER,
+        audience: this.AUDIENCE,
+      },
+    );
 
-    return { id: user.id, email: user.email };
+    return { accessToken: token };
   }
 
-  async login(loginDto: LoginDto) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+  checkToken(token: string) {
+    try {
+      const data = this.jwtService.verify(token, {
+        audience: this.AUDIENCE,
+        issuer: this.ISSUER,
+      });
 
-    const payload: JwtPayload = { sub: user.id, email: user.email };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+      return data;
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(error);
+    }
   }
 
-  async register(registerDto: RegisterDto) {
-    const passwordHash = await bcrypt.hash(registerDto.password, 10);
-    // Salvar no banco: { ...registerDto, password: passwordHash }
-    return { message: 'Usuário registrado (simulado)' };
+  async login(email: string, password: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Email or password not valid');
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) throw new UnauthorizedException('Email or password not valid');
+
+    return this.createToken(user);
+  }
+
+  async register(data: AuthRegisterDto) {
+    const user = await this.usersService.createUser(data);
+
+    return this.createToken(user);
   }
 }
