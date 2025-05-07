@@ -1,1 +1,5 @@
-"node_modules\n.env\ndist\n.next\n*.log" 
+/node_modules
+/.pnp
+.pnp.json
+dist
+build
