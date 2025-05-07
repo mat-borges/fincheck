@@ -6,6 +6,7 @@ import { AuthRegisterDto } from '../DTOs/auth-register.dto';
 import { CreateUserDto } from 'src/DTOs/create-user.dto';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { User } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 
 @Injectable()
@@ -20,7 +21,7 @@ export class AuthService {
     private usersService: UsersService,
   ) {}
 
-  async createToken(user: CreateUserDto) {
+  async createToken(user: User) {
     const token = this.jwtService.sign(
       {
         name: user.name,
