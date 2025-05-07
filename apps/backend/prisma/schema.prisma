@@ -11,7 +11,13 @@ model User {
   id          String       @id @default(uuid())
   email       String       @unique
   password    String
+  name        String
+  surname     String
+  createdAt   DateTime    @default(now())
   transactions Transaction[]
+
+  @@map("users")
+  @@index([email], name: "idx_users_email")
 }
 
 model Transaction {
@@ -22,14 +28,21 @@ model Transaction {
   userId     String
   user       User       @relation(fields: [userId], references: [id])
   category   Category   @relation(fields: [categoryId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   categoryId String
   tags       TransactionTag[]
+
+  @@map("transactions")
+  @@index([userId], name: "idx_transactions_userId")
 }
 
 model Category {
   id           String        @id @default(uuid())
   name         String        @unique
   transactions Transaction[]
+
+  @@map("categories")
 }
 
 model Tag {
